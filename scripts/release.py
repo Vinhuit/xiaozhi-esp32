@@ -99,9 +99,9 @@ def release(board_type, board_config, config_filename="config.json"):
         # unset IDF_TARGET
         os.environ.pop("IDF_TARGET", None)
         # Call set-target
-        if os.system(f"idf.py set-target {target}") != 0:
-            print("set-target failed")
-            sys.exit(1)
+        # if os.system(f"idf.py set-target {target}") != 0:
+        #     print("set-target failed")
+        #     sys.exit(1)
         # Append sdkconfig
         with open("sdkconfig", "a") as f:
             f.write("\n")

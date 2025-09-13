@@ -8,7 +8,7 @@
 
 #include <string>
 #include <chrono>
-
+LV_FONT_DECLARE(font_awesome_16_4);
 struct DisplayFonts {
     const lv_font_t* text_font = nullptr;
     const lv_font_t* icon_font = nullptr;

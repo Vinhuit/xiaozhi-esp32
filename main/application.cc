@@ -14,7 +14,7 @@
 #include <cJSON.h>
 #include <driver/gpio.h>
 #include <arpa/inet.h>
-
+#include "ui.h"
 #define TAG "Application"
 
 
@@ -121,6 +121,7 @@ void Application::CheckNewVersion(Ota& ota) {
                 char buffer[64];
                 snprintf(buffer, sizeof(buffer), "%d%% %uKB/s", progress, speed / 1024);
                 display->SetChatMessage("system", buffer);
+                // ui_add_chat_message(buffer, false);
             });
 
             if (!upgrade_success) {
@@ -135,6 +136,7 @@ void Application::CheckNewVersion(Ota& ota) {
                 // Upgrade success, reboot immediately
                 ESP_LOGI(TAG, "Firmware upgrade successful, rebooting...");
                 display->SetChatMessage("system", "Upgrade successful, rebooting...");
+                // ui_add_chat_message("Upgrade successful, rebooting...", false);
                 vTaskDelay(pdMS_TO_TICKS(1000)); // Brief pause to show message
                 Reboot();
                 return; // This line will never be reached after reboot
@@ -208,8 +210,10 @@ void Application::Alert(const char* status, const char* message, const char* emo
     ESP_LOGW(TAG, "Alert %s: %s [%s]", status, message, emotion);
     auto display = Board::GetInstance().GetDisplay();
     display->SetStatus(status);
-    display->SetEmotion(emotion);
+    // display->SetEmotion(emotion);
+    // ui_add_chat_message(emotion, false);
     display->SetChatMessage("system", message);
+    // ui_add_chat_message(message, false);
     if (!sound.empty()) {
         audio_service_.PlaySound(sound);
     }
@@ -219,12 +223,14 @@ void Application::DismissAlert() {
     if (device_state_ == kDeviceStateIdle) {
         auto display = Board::GetInstance().GetDisplay();
         display->SetStatus(Lang::Strings::STANDBY);
-        display->SetEmotion("neutral");
+        // display->SetEmotion("neutral");
+        // ui_add_chat_message("neutral", false);
         display->SetChatMessage("system", "");
+        // ui_add_chat_message("", false);
     }
 }
 
-void Application::ToggleChatState() {
+void Application::ToggleChatState() {    
     if (device_state_ == kDeviceStateActivating) {
         SetDeviceState(kDeviceStateIdle);
         return;
@@ -248,19 +254,22 @@ void Application::ToggleChatState() {
             if (!protocol_->IsAudioChannelOpened()) {
                 SetDeviceState(kDeviceStateConnecting);
                 if (!protocol_->OpenAudioChannel()) {
+                    
                     return;
                 }
             }
-
+            // lv_label_set_text(ui_Chat_date, "Idle");
             SetListeningMode(aec_mode_ == kAecOff ? kListeningModeAutoStop : kListeningModeRealtime);
         });
     } else if (device_state_ == kDeviceStateSpeaking) {
         Schedule([this]() {
             AbortSpeaking(kAbortReasonNone);
+            // lv_label_set_text(ui_Chat_date, "Speaking...");
         });
     } else if (device_state_ == kDeviceStateListening) {
         Schedule([this]() {
             protocol_->CloseAudioChannel();
+            // lv_label_set_text(ui_Chat_date, "Listening...");
         });
     }
 }
@@ -283,7 +292,7 @@ void Application::StartListening() {
     if (device_state_ == kDeviceStateIdle) {
         Schedule([this]() {
             if (!protocol_->IsAudioChannelOpened()) {
-                SetDeviceState(kDeviceStateConnecting);
+                SetDeviceState(kDeviceStateConnecting);                
                 if (!protocol_->OpenAudioChannel()) {
                     return;
                 }
@@ -397,6 +406,7 @@ void Application::Start() {
         Schedule([this]() {
             auto display = Board::GetInstance().GetDisplay();
             display->SetChatMessage("system", "");
+            // ui_add_chat_message("", false);
             SetDeviceState(kDeviceStateIdle);
         });
     });
@@ -428,6 +438,7 @@ void Application::Start() {
                     ESP_LOGI(TAG, "<< %s", text->valuestring);
                     Schedule([this, display, message = std::string(text->valuestring)]() {
                         display->SetChatMessage("assistant", message.c_str());
+                        // ui_add_chat_message(message.c_str(), false);
                     });
                 }
             }
@@ -437,13 +448,16 @@ void Application::Start() {
                 ESP_LOGI(TAG, ">> %s", text->valuestring);
                 Schedule([this, display, message = std::string(text->valuestring)]() {
                     display->SetChatMessage("user", message.c_str());
+                    // ui_add_chat_message(message.c_str(), true);
+                    
                 });
             }
         } else if (strcmp(type->valuestring, "llm") == 0) {
             auto emotion = cJSON_GetObjectItem(root, "emotion");
             if (cJSON_IsString(emotion)) {
                 Schedule([this, display, emotion_str = std::string(emotion->valuestring)]() {
-                    display->SetEmotion(emotion_str.c_str());
+                    // display->SetEmotion(emotion_str.c_str());
+                    // ui_add_chat_message(emotion_str.c_str(), false);
                 });
             }
         } else if (strcmp(type->valuestring, "mcp") == 0) {
@@ -480,6 +494,7 @@ void Application::Start() {
             if (cJSON_IsObject(payload)) {
                 Schedule([this, display, payload_str = std::string(cJSON_PrintUnformatted(payload))]() {
                     display->SetChatMessage("system", payload_str.c_str());
+                    // ui_add_chat_message(payload_str.c_str(), false);
                 });
             } else {
                 ESP_LOGW(TAG, "Invalid custom message format: missing payload");
@@ -498,6 +513,7 @@ void Application::Start() {
         std::string message = std::string(Lang::Strings::VERSION) + ota.GetCurrentVersion();
         display->ShowNotification(message.c_str());
         display->SetChatMessage("system", "");
+        // ui_add_chat_message("", false);
         // Play the success sound to indicate the device is ready
         audio_service_.PlaySound(Lang::Sounds::P3_SUCCESS);
     }
@@ -647,20 +663,27 @@ void Application::SetDeviceState(DeviceState state) {
         case kDeviceStateUnknown:
         case kDeviceStateIdle:
             display->SetStatus(Lang::Strings::STANDBY);
-            display->SetEmotion("neutral");
+            // display->SetEmotion("neutral");
+            // ui_add_chat_message("neutral", false);
+            lv_label_set_text(ui_Chat_date, "Idle");
             audio_service_.EnableVoiceProcessing(false);
             audio_service_.EnableWakeWordDetection(true);
             break;
         case kDeviceStateConnecting:
             display->SetStatus(Lang::Strings::CONNECTING);
-            display->SetEmotion("neutral");
-            display->SetChatMessage("system", "");
+            // display->SetEmotion("neutral");
+            // ui_add_chat_message("neutral", false);
+            // display->SetChatMessage("system", "");
+            lv_label_set_text(ui_Chat_date, "Connecting...");
+            // ui_add_chat_message("", false);
             break;
         case kDeviceStateListening:
             display->SetStatus(Lang::Strings::LISTENING);
-            display->SetEmotion("neutral");
+            // display->SetEmotion("neutral");
+            // ui_add_chat_message("neutral", false);
 
             // Make sure the audio processor is running
+            lv_label_set_text(ui_Chat_date, "Listening...");
             if (!audio_service_.IsAudioProcessorRunning()) {
                 // Send the start listening command
                 protocol_->SendStartListening(listening_mode_);
@@ -670,6 +693,7 @@ void Application::SetDeviceState(DeviceState state) {
             break;
         case kDeviceStateSpeaking:
             display->SetStatus(Lang::Strings::SPEAKING);
+            lv_label_set_text(ui_Chat_date, "Speaking...");
 
             if (listening_mode_ != kListeningModeRealtime) {
                 audio_service_.EnableVoiceProcessing(false);

@@ -1,0 +1,43 @@
+idf_component_register(
+    SRCS 
+        components/ui_comp_alarm_comp.c
+    components/ui_comp_clock_dot.c
+    components/ui_comp_scrolldots.c
+    components/ui_comp_small_label.c
+    components/ui_comp.c
+    screens/ui_Splash.c
+    screens/ui_Clock.c
+    screens/ui_Chat.c
+    screens/ui_Music_Player.c
+    screens/ui_Weather.c
+    screens/ui_Alarm.c
+    ui.c
+    components/ui_comp_hook.c
+    ui_helpers.c
+    ui_events.c
+    images/ui_img_mixsmart_png.c
+    images/ui_img_pattern_png.c
+    images/ui_img_clock_min_png.c
+    images/ui_img_clock_hour_png.c
+    images/ui_img_clock_sec_png.c
+    images/ui_img_636208_png.c
+    images/ui_img_211629_battery_full_icon_png.c
+    images/ui_img_211631_battery_low_icon_png.c
+    images/ui_img_211630_battery_half_icon_png.c
+    images/ui_img_211627_charging_battery_icon_png.c
+    images/ui_img_9123442_png.c
+    images/ui_img_chatbox_png.c
+    images/ui_img_chatbox2_png.c
+    images/ui_img_play_png.c
+    images/ui_img_album_png.c
+    images/ui_img_backward_png.c
+    images/ui_img_forward_png.c
+    images/ui_img_cloud_png.c
+    images/ui_img_weather_1_png.c
+    images/ui_img_weather_2_png.c
+    images/ui_img_weather_3_png.c
+    fonts/ui_font_Number.c
+    fonts/ui_font_Font1.c
+    INCLUDE_DIRS "."
+    REQUIRES lvgl__lvgl
+)

@@ -11,7 +11,7 @@
 #include "audio_codec.h"
 #include "settings.h"
 #include "assets/lang_config.h"
-
+#include "ui.h"
 #define TAG "Display"
 
 Display::Display() {
@@ -151,7 +151,10 @@ void Display::UpdateStatusBar(bool update_all) {
         DisplayLockGuard lock(this);
         if (battery_label_ != nullptr && battery_icon_ != icon) {
             battery_icon_ = icon;
+            
             lv_label_set_text(battery_label_, battery_icon_);
+               
+            ui_add_icon_chat_message(battery_icon_, ui_battery, const_cast<lv_font_t*>(&font_awesome_16_4));
         }
 
         if (low_battery_popup_ != nullptr) {
@@ -187,6 +190,7 @@ void Display::UpdateStatusBar(bool update_all) {
                 DisplayLockGuard lock(this);
                 network_icon_ = icon;
                 lv_label_set_text(network_label_, network_icon_);
+                ui_add_icon_chat_message(network_icon_, ui_wifistatus,const_cast<lv_font_t*>(&font_awesome_16_4));
             }
         }
     }
@@ -260,7 +264,21 @@ void Display::SetChatMessage(const char* role, const char* content) {
     if (chat_message_label_ == nullptr) {
         return;
     }
-    lv_label_set_text(chat_message_label_, content);
+    if (role && std::strcmp(role, "user") == 0) {
+        // 系统消息
+        lv_label_set_text(ui_Chat2, content);
+        // ui_add_chat_message(content, false);
+    } else if (role && (std::strcmp(role, "system") == 0 || std::strcmp(role, "assistant") == 0)) {
+        // 用户消息
+        lv_label_set_text(ui_Chat1, content);
+        // ui_add_chat_message(content, true);
+    } 
+    else {
+        // 助手消息
+        lv_label_set_text(chat_message_label_, content);
+        // ui_add_chat_message(content, false);
+    }
+    
 }
 
 void Display::SetTheme(const std::string& theme_name) {
